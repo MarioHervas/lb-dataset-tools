@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 @dataclass
 class LetterboxdData:
-    ratings:    pd.Dataframe
+    ratings:    pd.DataFrame
     diary:      pd.DataFrame
     watched:    pd.DataFrame
     watchlist:  Optional[pd.DataFrame] = None

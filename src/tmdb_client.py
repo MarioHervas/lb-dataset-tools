@@ -14,5 +14,18 @@ class TMDBClient:
         return None
 
     def get_movie_request(self,tmdb_id: int) -> dict:
-        pass
+        response = requests.get(f"https://api.themoviedb.org/3/movie/{tmdb_id}?api_key={self.api_key}&append_to_response=credits")
+        data = response.json()
+        director = []
+        for member in data["credits"]["crew"]:
+            if member["job"]=="Director":
+                director.append(member["name"])
+
+        return {
+            "genres": [g["name"] for g in data ["genres"]],
+            "overview": data["overview"],
+            "director": director,
+            "country": data["production_countries"][0]["iso_3166_1"] if data["production_countries"] else None,
+            "year": data["release_date"][:4] if data["release_date"] else None,
+        }
 

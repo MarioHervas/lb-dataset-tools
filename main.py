@@ -14,7 +14,7 @@ print(api_key)
 from src.tmdb_client import TMDBClient
 
 client = TMDBClient(api_key)
-print(client.get_tmdb_id("L’Eclisse", 1962))
+print(client.get_movie_request(client.get_tmdb_id("Nirvanna The Band", 2025)))
 
 # extractor = ZipExtractor()
 # data = extractor.extract(Path("zips/letterboxd-mariohervas-2026-03-04-17-51-utc.zip"))

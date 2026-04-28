@@ -1,37 +1,84 @@
-from src.zip_extractor import ZipExtractor, LetterboxdData
+# src/dataset_builder.py
+
+from src.zip_extractor import LetterboxdData
 from src.tmdb_client import TMDBClient
+from src.nanogenre_scraper import NanogenreScraper
+from src.movie_store import MovieStore
 import pandas as pd
 from pathlib import Path
+
+
 class DatasetConstructor:
-    def __init__(self, user_data: list[LetterboxdData],tmdb_client:TMDBClient):
+
+    def __init__(self, user_data: list[LetterboxdData], tmdb_client: TMDBClient, nanogenre_scraper: NanogenreScraper, movie_store: MovieStore):
         self.user_data = user_data
         self.tmdb_client = tmdb_client
+        self.nanogenre_scraper = nanogenre_scraper
+        self.movie_store = movie_store
+
     def build(self, output_path: Path) -> None:
-        output_path = Path(output_path) #TODO - Look into not making two times Path conversion but await incase script throws string
-        output_path.mkdir(parents=True, exist_ok = True)
+        output_path = Path(output_path)
+        output_path.mkdir(parents=True, exist_ok=True)
         movies = self._build_movies()
         interactions = self._build_interactions()
+        movies.to_csv(output_path / "movies.csv", index=False)
+        interactions.to_csv(output_path / "interactions.csv", index=False)
 
-        movies.to_csv(output_path / "movies.csv", index = False)
-        interactions.to_csv(output_path / "interactions.csv", index = False)
     def _build_movies(self) -> pd.DataFrame:
         all_movies = pd.concat(
-            [user.ratings[["Name","Year","Letterboxd URI"]] for user in self.user_data], ignore_index = True).drop_duplicates(subset=["Name","Year"]
-        )
-        rows = []
-        for movie in all_movies.iterrows():
-            tmdb_id = self.tmdb_client.get_tmdb_id(movie["Name"],movie["Year"])
-            details = self.tmdb_client.get_movie_request(tmdb_id)
-            details["tmdb_id"] = tmdb_id
-            details["name"] = movie["Name"]
-            details["letterboxd_uri"] = movie["Letterboxd URI"]
-            rows.append(details)
+            [user.ratings[["Name", "Year", "Letterboxd URI"]] for user in self.user_data],
+            ignore_index=True
+        ).drop_duplicates(subset=["Name", "Year"])
 
-        return pd.DataFrame(rows)
+        total = len(all_movies)
+
+        for i, (_, movie) in enumerate(all_movies.iterrows(), 1):
+            title_normalized = movie["Name"].lower()
+            print(f"[{i}/{total}] {movie['Name']}")
+
+
+            if self.movie_store.is_processed(title_normalized):
+                print(f"Found")
+                continue
+
+            # TMDB
+            tmdb_id = self.tmdb_client.get_tmdb_id(movie["Name"], movie["Year"])
+            if tmdb_id is None:
+                print(f"  ✗ Not found on tmdb")
+                continue
+
+            details = self.tmdb_client.get_movie_request(tmdb_id)
+
+
+            nanogenres = self.nanogenre_scraper.scrape(movie["Letterboxd URI"])
+            if nanogenres:
+                print(f"{len(nanogenres)} nanogenres")
+            else:
+                print(f"No Nano Found")
+
+
+            entry = {
+                "title_normalized": title_normalized,
+                "title_original": movie["Name"],
+                "tmdb_id": details["tmdb_id"] if "tmdb_id" in details else tmdb_id,
+                "year": details["year"],
+                "director": "|".join(details["director"]),
+                "tmdb_genres": "|".join(details["genres"]),
+                "overview": details["overview"],
+                "country": details["country"],
+                "nanogenres": "|".join(nanogenres),
+                "themes": "",  # TODO - BERTopic implementation
+                "lb_url": movie["Letterboxd URI"],
+            }
+
+            self.movie_store.add_movie(entry)
+
+        return self.movie_store.to_dataframe()
+
     def _build_interactions(self) -> pd.DataFrame:
         frames = []
         for user in self.user_data:
-            df = user.ratings[["Name","Year","Rating","Date"]].copy()
-            df["username"]=user.username
+            df = user.ratings[["Name", "Year", "Rating", "Date"]].copy()
+            df["username"] = user.username
             frames.append(df)
-        return pd.concat(frames,ignore_index=True)
+        return pd.concat(frames, ignore_index=True)

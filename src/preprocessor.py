@@ -1,6 +1,6 @@
 import pandas as pd
 from src.zip_extractor import ZipExtractor, LetterboxdData
-def preprocces(data: LetterboxdData):
+def preprocess(data: LetterboxdData):
     convert_to_date(data)
     normalize_ratings(data)
 def convert_to_date(data: LetterboxdData):

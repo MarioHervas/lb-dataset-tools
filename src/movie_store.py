@@ -31,3 +31,7 @@ class MovieStore:
             with open(self.store_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {}
+
+    def update_themes(self, title_normalized: str, themes: str) -> None:
+        if title_normalized in self.store:
+            self.store[title_normalized]["themes"] = themes

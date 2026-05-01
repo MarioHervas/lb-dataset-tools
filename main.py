@@ -34,7 +34,13 @@ client = TMDBClient(api_key=os.getenv("TMDB_API_KEY"))
 scraper = NanogenreScraper()
 store = MovieStore("movie_store.json")
 
+
+
 dataset = DatasetConstructor(data, client, scraper, store)
 dataset.build("testdata")
 
+from src.bertopic_enricher import BertopicEnricher
+
+enricher = BertopicEnricher(store)
+enricher.enrich()
 

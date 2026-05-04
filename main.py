@@ -20,24 +20,24 @@ from src.nanogenre_scraper import NanogenreScraper
 from src.dataset_builder import DatasetConstructor
 
 
-load_dotenv()
-
-extractor = ZipExtractor()
-data = []
-data.append(extractor.extract(Path("zips/letterboxd-mariohervas-2026-03-04-17-51-utc.zip")))
-data.append(extractor.extract(Path("zips/letterboxd-withloveclau-2026-02-28-12-46-utc.zip")))
-
-for d in data:
-    preprocess(d)
-
-client = TMDBClient(api_key=os.getenv("TMDB_API_KEY"))
-scraper = NanogenreScraper()
+# load_dotenv()
+#
+# extractor = ZipExtractor()
+# data = []
+# data.append(extractor.extract(Path("zips/letterboxd-mariohervas-2026-03-04-17-51-utc.zip")))
+# data.append(extractor.extract(Path("zips/letterboxd-withloveclau-2026-02-28-12-46-utc.zip")))
+#
+# for d in data:
+#     preprocess(d)
+#
+# client = TMDBClient(api_key=os.getenv("TMDB_API_KEY"))
+# scraper = NanogenreScraper()
 store = MovieStore("movie_store.json")
 
-
-
-dataset = DatasetConstructor(data, client, scraper, store)
-dataset.build("testdata")
+#
+#
+# dataset = DatasetConstructor(data, client, scraper, store)
+# dataset.build("testdata")
 
 from src.bertopic_enricher import BertopicEnricher
 
